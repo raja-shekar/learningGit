@@ -1,4 +1,4 @@
 # learningGit
 Just started learning git
-# Making changes in branch
+# Making changes
 Second change
