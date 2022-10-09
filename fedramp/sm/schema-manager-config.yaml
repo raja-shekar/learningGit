@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: sm-configmap
+data:
+  SM_EnabledMps: "bmi/ami/stage,gdi/gdi/stage,kodak/kodak/stage,nhrmc/nhrmc/stage,res/grossmont/stage,nir/cwmc/stage,renovo/nchs/stage,canon/canon/stage,canon/canonmr/stage,canon/canonvl/stage,canon/canondicom/stage,phantom/phantom/stage,cepheid/cepheid/stage,diah/diag/stage"
+  SM_GithubUserName: "username"
+  SM_GithubPassword: "password"
+  SM_VerticaWriteBatchSize: "50"

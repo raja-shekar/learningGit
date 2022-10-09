@@ -1,0 +1,1 @@
+kubectl patch mutatingwebhookconfigurations kyverno-resource-mutating-webhook-cfg --type json -p='[{"op": "replace", "path": "/webhooks/0/failurePolicy", "value": "Ignore"},{"op": "replace", "path": "/webhooks/0/timeoutSeconds", "value": 15}]'

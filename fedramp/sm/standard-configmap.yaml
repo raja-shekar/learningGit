@@ -1,0 +1,18 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: standard-configmap
+data:
+  h2Codbname: "codb"
+  h2Rudbname: "rudb"
+  h2OperationalDbName: "OperationalDB"
+  vtHosts: "gbd-vert-01"
+  gbLevel: "ERROR"
+  gbTopic: "GbforGb"
+  gbKafkaServers: "gbt-kafka-11:9092,gbt-kafka-12:9092,gbt-kafka-13:9092"
+  applianceMode: "false"
+  coDBSecretKey: "\"stage/h2/codb\""
+  ruDBSecretKey: "\"\""
+  opDBSecretKey: "\"\""
+  verticaSecretKey: "\"\""
+  FedRampEnabled: "false"

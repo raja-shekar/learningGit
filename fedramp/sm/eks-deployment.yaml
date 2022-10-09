@@ -1,0 +1,179 @@
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: sm-logs-v
+spec:
+  storageClassName: efs-sc
+  volumeMode: Filesystem
+  capacity:
+    storage: 10Gi
+  accessModes:
+    - ReadWriteMany
+  persistentVolumeReclaimPolicy: Retain
+  csi:
+    driver: efs.csi.aws.com
+    volumeHandle: fs-0fa0ab175c1a18ace::fsap-09976b3c377c7f05c
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: sm-logs-vc
+spec:
+  storageClassName: efs-sc
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 10Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: sm
+  labels:
+    app: sm
+spec:
+  type: LoadBalancer
+  selector:
+    app: sm
+  ports:
+    - name: sm-port
+      protocol: TCP
+      port: 6565
+      targetPort: 6565
+    - name: h2-opdb-web
+      protocol: TCP
+      port: 8083
+      targetPort: 8083
+    - name: h2-opdb-tcp
+      protocol: TCP
+      port: 9093
+      targetPort: 9093
+    - name: prometheus
+      protocol: TCP
+      port: 9023
+      targetPort: 9023
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sm
+  labels:
+    app: sm
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: sm
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: sm
+        app: sm
+    spec:
+      serviceAccountName: dev-sa
+      securityContext:
+        seccompProfile:
+           type: RuntimeDefault
+        runAsNonRoot: true
+        runAsUser: 999
+        runAsGroup: 998
+        fsGroup: 998
+      hostAliases:
+        - ip: "10.0.80.11"
+          hostnames:
+            - "gbt-cass-11"
+        - ip: "10.0.80.12"
+          hostnames:
+            - "gbt-cass-12"
+        - ip: "10.0.80.13"
+          hostnames:
+            - "gbt-cass-13"
+        - ip: "10.0.80.121"
+          hostnames:
+            - "gbt-kafka-11"
+        - ip: "10.0.80.122"
+          hostnames:
+            - "gbt-kafka-12"
+        - ip: "10.0.80.123"
+          hostnames:
+            - "gbt-kafka-13"
+        - ip: "10.0.80.111"
+          hostnames:
+            - "gbt-solr-11"
+        - ip: "10.0.80.112"
+          hostnames:
+            - "gbt-solr-12"
+        - ip: "10.0.80.113"
+          hostnames:
+            - "gbt-solr-13"
+        - ip: "10.0.80.229"
+          hostnames:
+            - "gbt-vert-12"
+      volumes:
+        - name: sm-logs
+          persistentVolumeClaim:
+            claimName: sm-logs-vc
+      containers:
+        - name: sm
+          image: jnkserver.glassbeam.com:8082/glassbeam/schema-manager:7.3.0.10
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 6565
+          securityContext:
+            readOnlyRootFilesystem: true
+            allowPrivilegeEscalation: false
+            capabilities:
+                drop:
+                - CAP_NET_RAW
+                - ALL
+                add: ['NET_BIND_SERVICE']
+          resources:
+            requests:
+              cpu: "500m"
+              memory: "1Gi"
+            limits:
+              cpu: "1000m"
+              memory: "2Gi"
+          livenessProbe:
+            tcpSocket:
+              port: 6565
+            initialDelaySeconds: 120
+            periodSeconds: 120
+          readinessProbe:
+            tcpSocket:
+              port: 6565
+            initialDelaySeconds: 120
+            periodSeconds: 120
+          volumeMounts:
+            - name: sm-logs
+              mountPath: "/home/platform/logs"
+          envFrom:
+            - configMapRef:
+                name: sm-configmap
+            - configMapRef:
+                name: standard-configmap
+            - secretRef:
+                name: h2-secret
+          env:
+            - name: SM_HttpPort
+              value: "$(SM_SERVICE_PORT)"
+            - name: SM_HttpInterface
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: status.podIP
+            - name: prometheusPort
+              value: "$(SM_SERVICE_PORT_PROMETHEUS)"
+            - name: SM_H2CodbTcpPort
+              value: "$(H2_SERVICE_PORT_H2_TCP)"
+            - name: SM_H2CodbWebPort
+              value: "$(H2_SERVICE_PORT_H2_WEB)"
+            - name: ConsulInterface
+              value: "$(CONSUL_SERVICE_SERVICE_HOST)"
+            - name: ConsulPort
+              value: "$(CONSUL_SERVICE_SERVICE_PORT)"
+            - name: h2Host
+              value: "$(H2_SERVICE_HOST):$(H2_SERVICE_PORT_H2_TCP)"
+            - name: h2rmHost
+              value: "$(H2_SERVICE_HOST):$(H2_SERVICE_PORT_H2_TCP)"

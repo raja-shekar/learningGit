@@ -1,0 +1,34 @@
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: check-gb-image
+spec:
+  validationFailureAction: enforce
+  background: false
+  webhookTimeoutSeconds: 30
+  failurePolicy: Fail
+  rules:
+    - name: check-gb-image
+      match:
+        any:
+        - resources:
+            kinds:
+              - Pod
+      verifyImages:
+      - imageReferences:
+        - "gbnexusrepo.glassbeam.com/glassbeam/*:*"
+        attestors:
+        - count: 1
+          entries:
+          - keys:
+              publicKeys: |-
+                -----BEGIN PUBLIC KEY-----
+                MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAy35QLc8ADx8v6zFv8At9
+                4xt0w5UV9lYZiqMB3bV/gt8z0viQa8zRSW3QiObDyRemq6BoIXIPh5kptENaiA4C
+                x1CPZtgXddaZjsgNEJ0BDW20b5wtZz4EGlZDNf4jLBPHz/1z9tGdwyorhkbx/tBI
+                UD1TBNpFof1RaazHJwQaPLAIeHNzz8YjUQvp+jQZTHXWrw0Ca98XSuPlBA9hsCHK
+                xt7OdbXctiMq/Uprw8gWS2aFNOC/6PizTnprg5yQ5qN5XeAnxPFN9Rco/QN4VUV0
+                +OcIyzRlS87kHZl6DA+0r7Klc04isoHki3xPC65c/V65d8dwKQ3QYOltR1jL8Vts
+                ZQIDAQAB
+                -----END PUBLIC KEY-----
+
